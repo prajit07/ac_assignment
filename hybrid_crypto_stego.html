@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Hybrid Cryptosystem: Hill Cipher + S-DES + Steganography</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+      background: linear-gradient(135deg, #1f1147 0%, #3d1f6b 30%, #7b2d8e 60%, #b8336a 100%);
+      background-attachment: fixed;
+      color: #1a1a2e;
+      margin: 0;
+      padding: 20px 40px 60px 40px;
+      line-height: 1.5;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 30px;
+      color: #ffffff;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+      padding-bottom: 10px;
+      margin-bottom: 4px;
+      letter-spacing: 1px;
+      background: linear-gradient(90deg, #ff9a3c, #ff3cac, #784ba0, #2b86c5);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 800;
+    }
+
+    h2.subtitle {
+      text-align: center;
+      font-size: 15px;
+      font-weight: 500;
+      font-style: italic;
+      margin-top: 0;
+      margin-bottom: 25px;
+      color: #ffe9ff;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 10px 24px;
+      border: none;
+      border-radius: 30px;
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    .tab-btn:hover {
+      background: rgba(255, 255, 255, 0.32);
+      transform: translateY(-1px);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(90deg, #ff512f, #f09819);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(255, 81, 47, 0.5);
+    }
+
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    fieldset {
+      border: none;
+      border-radius: 14px;
+      margin-bottom: 20px;
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+      border-left: 6px solid #ff512f;
+    }
+
+    fieldset:nth-of-type(2n) {
+      border-left-color: #2b86c5;
+    }
+
+    fieldset:nth-of-type(3n) {
+      border-left-color: #12c2a1;
+    }
+
+    legend {
+      font-weight: 700;
+      padding: 2px 10px;
+      background: linear-gradient(90deg, #6a11cb, #2575fc);
+      color: #fff;
+      border-radius: 20px;
+      font-size: 13px;
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+      color: #2a2a3d;
+      font-weight: 500;
+    }
+
+    input[type=text],
+    input[type=number],
+    textarea {
+      font-family: "Courier New", monospace;
+      font-size: 14px;
+      width: 100%;
+      padding: 7px 8px;
+      border: 2px solid #d8d8f0;
+      border-radius: 8px;
+      background: #fbfbff;
+      margin-top: 4px;
+      transition: border-color 0.15s;
+    }
+
+    input[type=text]:focus,
+    input[type=number]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #ff512f;
+    }
+
+    input[type=number] {
+      width: 75px;
+      display: inline-block;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    .key-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 75px);
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .row {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .col {
+      flex: 1;
+      min-width: 260px;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 10px 22px;
+      border: none;
+      border-radius: 24px;
+      background: linear-gradient(90deg, #12c2a1, #2575fc);
+      color: #fff;
+      cursor: pointer;
+      margin-top: 14px;
+      margin-right: 8px;
+      box-shadow: 0 4px 12px rgba(37, 117, 252, 0.4);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(37, 117, 252, 0.55);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    #btn-encode,
+    #btn-decode {
+      background: linear-gradient(90deg, #ff512f, #f09819);
+      box-shadow: 0 4px 12px rgba(255, 81, 47, 0.4);
+    }
+
+    #btn-encode:hover,
+    #btn-decode:hover {
+      box-shadow: 0 6px 16px rgba(255, 81, 47, 0.55);
+    }
+
+    #btn-download-stego {
+      background: linear-gradient(90deg, #11998e, #38ef7d);
+      box-shadow: 0 4px 12px rgba(17, 153, 142, 0.4);
+    }
+
+    .output-box {
+      border: 2px solid #d8d8f0;
+      border-radius: 10px;
+      background: #0f172a;
+      color: #7dffb0;
+      padding: 12px 14px;
+      margin-top: 10px;
+      font-family: "Courier New", monospace;
+      font-size: 12.5px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 280px;
+      overflow-y: auto;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    .step-title {
+      font-weight: bold;
+      color: #ffd166;
+      border-bottom: 1px dotted #556;
+      margin-top: 10px;
+      margin-bottom: 3px;
+      display: block;
+    }
+
+    canvas,
+    img.preview {
+      border: 3px solid #fff;
+      border-radius: 10px;
+      margin-top: 10px;
+      max-width: 100%;
+      image-rendering: pixelated;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+    }
+
+    .hr {
+      border: none;
+      border-top: 1px solid rgba(255, 255, 255, 0.3);
+      margin: 22px 0;
+    }
+
+    .note {
+      font-size: 12px;
+      color: #5a5a72;
+      font-style: italic;
+    }
+
+    table.info {
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 13px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    table.info td,
+    table.info th {
+      border: 1px solid #e0e0f0;
+      padding: 6px 12px;
+    }
+
+    table.info th {
+      background: #eef1ff;
+      color: #3d1f6b;
+    }
+
+    .error {
+      color: #ff6b6b;
+      font-weight: bold;
+    }
+
+    .ok {
+      color: #38ef7d;
+      font-weight: bold;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 12px;
+      margin-top: 40px;
+      color: #ffe9ff;
+      border-top: 1px solid rgba(255, 255, 255, 0.3);
+      padding-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Assignment - 1 </h1>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="encode">1. Encode (Hide Message)</button>
+    <button class="tab-btn" data-tab="decode">2. Decode (Reveal Message)</button>
+    <button class="tab-btn" data-tab="about">3. About the Pipeline</button>
+  </div>
+
+  <!-- ===================== ENCODE PANEL ===================== -->
+  <div class="panel active" id="panel-encode">
+
+    <fieldset>
+      <legend>Step 1 — Plaintext</legend>
+      <label>Message to hide (letters recommended for Hill cipher; non-letters are preserved as-is through S-DES/stego
+        layer):</label>
+      <textarea id="enc-plaintext" rows="3">Prajit Janakiraman</textarea>
+    </fieldset>
+
+    <div class="row">
+      <div class="col">
+        <fieldset>
+          <legend>Step 2 — Hill Cipher Key (2 x 2 matrix, mod 26)</legend>
+          <label>Enter 4 integers. Matrix must be invertible mod 26 (determinant coprime with 26).</label>
+          <div class="key-grid">
+            <input type="number" id="enc-h-a" value="3">
+            <input type="number" id="enc-h-b" value="2">
+            <input type="number" id="enc-h-c" value="7">
+            <input type="number" id="enc-h-d" value="3">
+          </div>
+        </fieldset>
+      </div>
+      <div class="col">
+        <fieldset>
+          <legend>Step 3 — S-DES Key (10 bits)</legend>
+          <label>Enter a 10-bit binary key:</label>
+          <input type="text" id="enc-sdes-key" value="1111111111" maxlength="10">
+          <button type="button" id="enc-rand-key">Randomize Key</button>
+        </fieldset>
+      </div>
+    </div>
+
+    <fieldset>
+      <legend>Step 4 — Cover Image</legend>
+      <label>Upload a PNG/BMP cover image (larger images = more hiding capacity):</label>
+      <input type="file" id="enc-image" accept="image/*">
+      <div><canvas id="enc-canvas" style="display:none;"></canvas></div>
+      <table class="info" id="enc-capacity-table" style="display:none;">
+        <tr>
+          <th>Image size</th>
+          <td id="enc-img-dims">-</td>
+        </tr>
+        <tr>
+          <th>Max capacity</th>
+          <td id="enc-img-capacity">-</td>
+        </tr>
+      </table>
+    </fieldset>
+
+    <button id="btn-encode">RUN PIPELINE &amp; EMBED</button>
+    <button id="btn-download-stego" style="display:none;">DOWNLOAD STEGO IMAGE</button>
+
+    <div id="enc-log" class="output-box" style="display:none;"></div>
+    <div style="text-align:center;">
+      <img id="stego-preview" class="preview" style="display:none;">
+    </div>
+  </div>
+
+  <!-- ===================== DECODE PANEL ===================== -->
+  <div class="panel" id="panel-decode">
+
+    <fieldset>
+      <legend>Step 1 — Stego Image</legend>
+      <label>Upload the stego (encoded) image produced by the Encode tab:</label>
+      <input type="file" id="dec-image" accept="image/*">
+    </fieldset>
+
+    <div class="row">
+      <div class="col">
+        <fieldset>
+          <legend>Step 2 — Hill Cipher Key</legend>
+          <label>Must match the key used during encoding:</label>
+          <div class="key-grid">
+            <input type="number" id="dec-h-a" value="3">
+            <input type="number" id="dec-h-b" value="3">
+            <input type="number" id="dec-h-c" value="2">
+            <input type="number" id="dec-h-d" value="5">
+          </div>
+        </fieldset>
+      </div>
+      <div class="col">
+        <fieldset>
+          <legend>Step 3 — S-DES Key (10 bits)</legend>
+          <label>Must match the key used during encoding:</label>
+          <input type="text" id="dec-sdes-key" value="1010000010" maxlength="10">
+        </fieldset>
+      </div>
+    </div>
+
+    <button id="btn-decode">EXTRACT &amp; DECRYPT</button>
+
+    <div id="dec-log" class="output-box" style="display:none;"></div>
+
+    <fieldset style="margin-top:20px;">
+      <legend>Recovered Plaintext</legend>
+      <div id="dec-result" class="output-box">(nothing decoded yet)</div>
+    </fieldset>
+  </div>
+
+  <!-- ===================== ABOUT PANEL ===================== -->
+  <div class="panel" id="panel-about">
+    <fieldset>
+      <legend>Pipeline Overview</legend>
+      <p><b>Encoding direction:</b></p>
+      <table class="info">
+        <tr>
+          <th>Stage</th>
+          <th>Operation</th>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td>Plaintext letters are grouped in pairs and encrypted with a classical <b>Hill Cipher</b> (2x2 matrix, mod
+            26). Non-letters pass through as literal characters placed between letter groups.</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>The resulting Hill-ciphertext string is converted to its byte values (character codes) and each byte is
+            encrypted independently with <b>S-DES</b> (Simplified DES) using a 10-bit key that generates two 8-bit
+            subkeys, K1 and K2.</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>The doubly-encrypted byte stream is converted to a bit stream, prefixed with a 32-bit length header, and
+            embedded into the <b>least significant bit</b> of the Red/Green/Blue channels of a cover image, one bit per
+            channel, left-to-right, top-to-bottom.</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>The modified image (stego image) is exported as a lossless PNG for download.</td>
+        </tr>
+      </table>
+      <p><b>Decoding direction</b> reverses each stage: extract LSBs &rarr; rebuild bytes &rarr; S-DES decrypt with K2
+        then K1 &rarr; Hill-cipher decrypt with the inverse key matrix &rarr; original plaintext.</p>
+    </fieldset>
+  </div>
+
+
+  <script>
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+      });
+    });
+
+    function mod(n, m) { return ((n % m) + m) % m; }
+
+    function egcd(a, b) {
+      if (b === 0) return [a, 1, 0];
+      const [g, x1, y1] = egcd(b, a % b);
+      return [g, y1, x1 - Math.floor(a / b) * y1];
+    }
+    function modInverse(a, m) {
+      const [g, x] = egcd(mod(a, m), m);
+      if (g !== 1) return null;
+      return mod(x, m);
+    }
+
+    function hillKeyInfo(a, b, c, d) {
+      const det = mod(a * d - b * c, 26);
+      const detInv = modInverse(det, 26);
+      return { det, detInv, invertible: detInv !== null };
+    }
+
+    function hillInverseMatrix(a, b, c, d) {
+      const { det, detInv } = hillKeyInfo(a, b, c, d);
+      if (detInv === null) return null;
+      return {
+        a: mod(detInv * d, 26),
+        b: mod(detInv * -b, 26),
+        c: mod(detInv * -c, 26),
+        d: mod(detInv * a, 26)
+      };
+    }
+
+    function hillProcess(text, a, b, c, d, encrypt) {
+      const letters = [];
+      const positions = [];
+      const upper = text.toUpperCase();
+      for (let i = 0; i < upper.length; i++) {
+        const ch = upper[i];
+        if (ch >= "A" && ch <= "Z") {
+          letters.push(ch.charCodeAt(0) - 65);
+          positions.push(i);
+        }
+      }
+      let padded = false;
+      if (letters.length % 2 !== 0) {
+        letters.push(23);
+        padded = true;
+      }
+
+      const outLetters = [];
+      for (let i = 0; i < letters.length; i += 2) {
+        const p1 = letters[i], p2 = letters[i + 1];
+        let r1, r2;
+        if (encrypt) {
+          r1 = mod(a * p1 + b * p2, 26);
+          r2 = mod(c * p1 + d * p2, 26);
+        } else {
+          r1 = mod(a * p1 + b * p2, 26);
+          r2 = mod(c * p1 + d * p2, 26);
+        }
+        outLetters.push(r1, r2);
+      }
+
+      const chars = text.split("");
+      let li = 0;
+      for (let i = 0; i < positions.length; i++) {
+        chars[positions[i]] = String.fromCharCode(65 + outLetters[li]);
+        li++;
+      }
+      let result = chars.join("");
+      if (padded) {
+        result += String.fromCharCode(65 + outLetters[li]);
+      }
+      return result;
+    }
+
+    function hillEncrypt(text, a, b, c, d) {
+      return hillProcess(text, a, b, c, d, true);
+    }
+
+    function hillEncryptDetailed(text, a, b, c, d) {
+      const letters = [];
+      const positions = [];
+      const upper = text.toUpperCase();
+      for (let i = 0; i < upper.length; i++) {
+        const ch = upper[i];
+        if (ch >= "A" && ch <= "Z") {
+          letters.push(ch.charCodeAt(0) - 65);
+          positions.push(i);
+        }
+      }
+      let padded = false;
+      if (letters.length % 2 !== 0) {
+        letters.push(23);
+        padded = true;
+      }
+      const outLetters = [];
+      const pairs = [];
+      for (let i = 0; i < letters.length; i += 2) {
+        const p1 = letters[i], p2 = letters[i + 1];
+        const c1 = mod(a * p1 + b * p2, 26);
+        const c2 = mod(c * p1 + d * p2, 26);
+        outLetters.push(c1, c2);
+        pairs.push({
+          p1, p2,
+          p1L: String.fromCharCode(65 + p1), p2L: String.fromCharCode(65 + p2),
+          c1, c2,
+          c1L: String.fromCharCode(65 + c1), c2L: String.fromCharCode(65 + c2)
+        });
+      }
+      const chars = text.split("");
+      let li = 0;
+      for (let i = 0; i < positions.length; i++) {
+        chars[positions[i]] = String.fromCharCode(65 + outLetters[li]);
+        li++;
+      }
+      let result = chars.join("");
+      if (padded) result += String.fromCharCode(65 + outLetters[li]);
+      return { result, pairs, padded };
+    }
+    function hillDecrypt(text, a, b, c, d) {
+      const inv = hillInverseMatrix(a, b, c, d);
+      if (!inv) return null;
+      return hillProcess(text, inv.a, inv.b, inv.c, inv.d, false);
+    }
+
+    const SDES_P10 = [3, 5, 2, 7, 4, 10, 1, 9, 8, 6];
+    const SDES_P8 = [6, 3, 7, 4, 8, 5, 10, 9];
+    const SDES_IP = [2, 6, 3, 1, 4, 8, 5, 7];
+    const SDES_IP1 = [4, 1, 3, 5, 7, 2, 8, 6];
+    const SDES_EP = [4, 1, 2, 3, 2, 3, 4, 1];
+    const SDES_P4 = [2, 4, 3, 1];
+    const SDES_S0 = [
+      [1, 0, 3, 2],
+      [3, 2, 1, 0],
+      [0, 2, 1, 3],
+      [3, 1, 3, 2]
+    ];
+    const SDES_S1 = [
+      [0, 1, 2, 3],
+      [2, 0, 1, 3],
+      [3, 0, 1, 0],
+      [2, 1, 0, 3]
+    ];
+
+    function permute(bits, table) {
+      return table.map(pos => bits[pos - 1]);
+    }
+    function leftShift(bits, n) {
+      return bits.slice(n).concat(bits.slice(0, n));
+    }
+    function xorBits(a, b) {
+      return a.map((v, i) => v ^ b[i]);
+    }
+    function strToBits(str) {
+      return str.split("").map(Number);
+    }
+    function bitsToStr(bits) {
+      return bits.join("");
+    }
+
+    function sdesGenerateKeys(key10) {
+      const p10 = permute(key10, SDES_P10);
+      let left = p10.slice(0, 5), right = p10.slice(5, 10);
+      left = leftShift(left, 1); right = leftShift(right, 1);
+      const k1 = permute(left.concat(right), SDES_P8);
+      left = leftShift(left, 2); right = leftShift(right, 2);
+      const k2 = permute(left.concat(right), SDES_P8);
+      return { k1, k2 };
+    }
+
+    function sBoxLookup(bits4, sbox) {
+      const row = bits4[0] * 2 + bits4[3];
+      const col = bits4[1] * 2 + bits4[2];
+      const val = sbox[row][col];
+      return [(val >> 1) & 1, val & 1];
+    }
+
+    function fk(bits8, subkey8) {
+      const left = bits8.slice(0, 4), right = bits8.slice(4, 8);
+      const expanded = permute(right, SDES_EP);
+      const xored = xorBits(expanded, subkey8);
+      const s0out = sBoxLookup(xored.slice(0, 4), SDES_S0);
+      const s1out = sBoxLookup(xored.slice(4, 8), SDES_S1);
+      const p4out = permute(s0out.concat(s1out), SDES_P4);
+      const newLeft = xorBits(left, p4out);
+      return newLeft.concat(right);
+    }
+
+    function swap(bits8) {
+      return bits8.slice(4, 8).concat(bits8.slice(0, 4));
+    }
+
+    function sdesEncryptByte(byteBits8, k1, k2) {
+      let ip = permute(byteBits8, SDES_IP);
+      let afterFk1 = fk(ip, k1);
+      let swapped = swap(afterFk1);
+      let afterFk2 = fk(swapped, k2);
+      return permute(afterFk2, SDES_IP1);
+    }
+    function sdesDecryptByte(byteBits8, k1, k2) {
+      let ip = permute(byteBits8, SDES_IP);
+      let afterFk1 = fk(ip, k2);
+      let swapped = swap(afterFk1);
+      let afterFk2 = fk(swapped, k1);
+      return permute(afterFk2, SDES_IP1);
+    }
+
+    function byteToBits(byte) {
+      const bits = [];
+      for (let i = 7; i >= 0; i--) bits.push((byte >> i) & 1);
+      return bits;
+    }
+    function bitsToByte(bits) {
+      let v = 0;
+      for (let i = 0; i < 8; i++) v = (v << 1) | bits[i];
+      return v;
+    }
+
+    function sdesEncryptBytes(bytes, key10bits) {
+      const { k1, k2 } = sdesGenerateKeys(key10bits);
+      const out = [];
+      for (const b of bytes) {
+        out.push(bitsToByte(sdesEncryptByte(byteToBits(b), k1, k2)));
+      }
+      return out;
+    }
+    function sdesDecryptBytes(bytes, key10bits) {
+      const { k1, k2 } = sdesGenerateKeys(key10bits);
+      const out = [];
+      for (const b of bytes) {
+        out.push(bitsToByte(sdesDecryptByte(byteToBits(b), k1, k2)));
+      }
+      return out;
+    }
+
+    function bytesToBitArray(bytes) {
+      const bits = [];
+      for (const b of bytes) {
+        for (let i = 7; i >= 0; i--) bits.push((b >> i) & 1);
+      }
+      return bits;
+    }
+    function bitArrayToBytes(bits) {
+      const bytes = [];
+      for (let i = 0; i + 8 <= bits.length; i += 8) {
+        let v = 0;
+        for (let j = 0; j < 8; j++) v = (v << 1) | bits[i + j];
+        bytes.push(v);
+      }
+      return bytes;
+    }
+    function intTo32Bits(n) {
+      const bits = [];
+      for (let i = 31; i >= 0; i--) bits.push((n >> i) & 1);
+      return bits;
+    }
+    function bits32ToInt(bits) {
+      let v = 0;
+      for (let i = 0; i < 32; i++) v = (v * 2) + bits[i];
+      return v >>> 0;
+    }
+
+    function embedBitsInImageData(imageData, payloadBytes) {
+      const data = imageData.data;
+      const lengthBits = intTo32Bits(payloadBytes.length);
+      const payloadBits = bytesToBitArray(payloadBytes);
+      const allBits = lengthBits.concat(payloadBits);
+
+      const capacityBits = Math.floor(data.length / 4) * 3;
+      if (allBits.length > capacityBits) {
+        throw new Error("Image too small to hold this payload. Capacity: " + Math.floor(capacityBits / 8) + " bytes, needed: " + (allBits.length / 8) + " bytes.");
+      }
+
+      let bitIdx = 0;
+      for (let px = 0; px < data.length && bitIdx < allBits.length; px += 4) {
+        for (let ch = 0; ch < 3 && bitIdx < allBits.length; ch++) {
+          data[px + ch] = (data[px + ch] & 0xFE) | allBits[bitIdx];
+          bitIdx++;
+        }
+      }
+      return imageData;
+    }
+
+    function extractBitsFromImageData(imageData) {
+      const data = imageData.data;
+      let bitIdx = 0;
+      const lenBits = [];
+      let px = 0, ch = 0;
+      function nextBit() {
+        while (true) {
+          if (px >= data.length) return null;
+          const bit = data[px + ch] & 1;
+          ch++;
+          if (ch === 3) { ch = 0; px += 4; }
+          return bit;
+        }
+      }
+      for (let i = 0; i < 32; i++) lenBits.push(nextBit());
+      const payloadLenBytes = bits32ToInt(lenBits);
+      const totalBitsNeeded = payloadLenBytes * 8;
+      const payloadBits = [];
+      for (let i = 0; i < totalBitsNeeded; i++) {
+        const b = nextBit();
+        if (b === null) throw new Error("Image data ended before payload was fully read — file may be corrupted or not a valid stego image.");
+        payloadBits.push(b);
+      }
+      return bitArrayToBytes(payloadBits);
+    }
+
+    function key10FromString(str) {
+      if (!/^[01]{10}$/.test(str)) return null;
+      return strToBits(str);
+    }
+    function bytesToHex(bytes) {
+      return bytes.map(b => b.toString(16).padStart(2, "0")).join(" ");
+    }
+    function log(el, text, cls) {
+      const span = document.createElement("div");
+      if (cls) span.className = cls;
+      span.textContent = text;
+      el.appendChild(span);
+    }
+    function clearLog(el) {
+      el.innerHTML = "";
+      el.style.display = "block";
+    }
+
+    let encImageEl = null;
+    let encCanvas = document.getElementById("enc-canvas");
+
+    document.getElementById("enc-rand-key").addEventListener("click", () => {
+      let bits = "";
+      for (let i = 0; i < 10; i++) bits += Math.round(Math.random());
+      document.getElementById("enc-sdes-key").value = bits;
+    });
+
+    document.getElementById("enc-image").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const img = new Image();
+      img.onload = () => {
+        encImageEl = img;
+        encCanvas.width = img.width;
+        encCanvas.height = img.height;
+        const ctx = encCanvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        document.getElementById("enc-img-dims").textContent = img.width + " x " + img.height + " px";
+        const capacityBytes = Math.floor((img.width * img.height * 3) / 8) - 4;
+        document.getElementById("enc-img-capacity").textContent = capacityBytes + " bytes (approx.)";
+        document.getElementById("enc-capacity-table").style.display = "table";
+      };
+      img.src = URL.createObjectURL(file);
+    });
+
+    document.getElementById("btn-encode").addEventListener("click", () => {
+      const logEl = document.getElementById("enc-log");
+      clearLog(logEl);
+      document.getElementById("btn-download-stego").style.display = "none";
+      document.getElementById("stego-preview").style.display = "none";
+
+      try {
+        const plaintext = document.getElementById("enc-plaintext").value;
+        if (!plaintext) throw new Error("Please enter a plaintext message.");
+
+        const a = parseInt(document.getElementById("enc-h-a").value, 10);
+        const b = parseInt(document.getElementById("enc-h-b").value, 10);
+        const c = parseInt(document.getElementById("enc-h-c").value, 10);
+        const d = parseInt(document.getElementById("enc-h-d").value, 10);
+        const { invertible, det } = hillKeyInfo(a, b, c, d);
+        if (!invertible) throw new Error("Hill key matrix is not invertible mod 26 (det=" + mod(det, 26) + "). Choose different a,b,c,d.");
+
+        const keyStr = document.getElementById("enc-sdes-key").value.trim();
+        const key10 = key10FromString(keyStr);
+        if (!key10) throw new Error("S-DES key must be exactly 10 binary digits (0/1).");
+
+        if (!encImageEl) throw new Error("Please upload a cover image.");
+
+        log(logEl, "STEP 1 — Hill Cipher Encryption (Layer 1 output)", "step-title");
+        log(logEl, "Plaintext       : " + plaintext);
+        log(logEl, "Key matrix K    : [[" + a + "," + b + "],[" + c + "," + d + "]]   det mod 26 = " + mod(det, 26) + "  (det^-1 mod 26 = " + modInverse(mod(det, 26), 26) + ")");
+        const hillDetail = hillEncryptDetailed(plaintext, a, b, c, d);
+        hillDetail.pairs.forEach(p => {
+          log(logEl, "  pair [" + p.p1L + "," + p.p2L + "] = [" + p.p1 + "," + p.p2 + "]  ->  K*[p1,p2]^T mod26 = [" + p.c1 + "," + p.c2 + "]  ->  [" + p.c1L + "," + p.c2L + "]");
+        });
+        if (hillDetail.padded) log(logEl, "  (odd letter count — padded final block with 'X')");
+        const hillCipherText = hillDetail.result;
+        log(logEl, "Hill ciphertext (Layer 1 output): " + hillCipherText, "ok");
+
+        log(logEl, "STEP 2 — S-DES Encryption, byte-wise (Layer 2 output)", "step-title");
+        const bytes = Array.from(hillCipherText).map(ch => ch.charCodeAt(0));
+        const { k1, k2 } = sdesGenerateKeys(key10);
+        log(logEl, "S-DES master key (10-bit): " + keyStr);
+        log(logEl, "  Subkey K1 (8-bit): " + bitsToStr(k1));
+        log(logEl, "  Subkey K2 (8-bit): " + bitsToStr(k2));
+        const sdesCipherBytes = [];
+        hillCipherText.split("").forEach((ch, idx) => {
+          const byte = bytes[idx];
+          const inBits = byteToBits(byte);
+          const outBits = sdesEncryptByte(inBits, k1, k2);
+          const outByte = bitsToByte(outBits);
+          sdesCipherBytes.push(outByte);
+          log(logEl, "  '" + ch + "' (0x" + byte.toString(16).padStart(2, "0") + " / " + bitsToStr(inBits) + ")  ->  0x" + outByte.toString(16).padStart(2, "0") + " / " + bitsToStr(outBits));
+        });
+        log(logEl, "S-DES ciphertext bytes (Layer 2 output, hex): " + bytesToHex(sdesCipherBytes), "ok");
+
+        log(logEl, "STEP 3 — LSB Steganographic Embedding (Layer 3 output)", "step-title");
+        const ctx = encCanvas.getContext("2d");
+        const imageData = ctx.getImageData(0, 0, encCanvas.width, encCanvas.height);
+        const embedded = embedBitsInImageData(imageData, sdesCipherBytes);
+        ctx.putImageData(embedded, 0, 0);
+        const headerBitsStr = bitsToStr(intTo32Bits(sdesCipherBytes.length));
+        const totalBitsUsed = 32 + sdesCipherBytes.length * 8;
+        const capacityBits = Math.floor((encCanvas.width * encCanvas.height * 3));
+        log(logEl, "32-bit length header embedded first: " + headerBitsStr + "  (=" + sdesCipherBytes.length + " payload bytes)");
+        log(logEl, "Payload bits embedded: " + (sdesCipherBytes.length * 8) + "  |  Total bits used (header+payload): " + totalBitsUsed + " / " + capacityBits + " available LSB slots");
+        log(logEl, "Cover image dimensions: " + encCanvas.width + " x " + encCanvas.height + " px  (bits stored in R,G,B channel LSBs only, sequentially)");
+        log(logEl, "Stego image (Layer 3 output) generated below — visually identical to the cover image.", "ok");
+
+        const dataUrl = encCanvas.toDataURL("image/png");
+        const previewImg = document.getElementById("stego-preview");
+        previewImg.src = dataUrl;
+        previewImg.style.display = "inline-block";
+
+        const dlBtn = document.getElementById("btn-download-stego");
+        dlBtn.style.display = "inline-block";
+        dlBtn.onclick = () => {
+          const a = document.createElement("a");
+          a.href = dataUrl;
+          a.download = "output.png";
+          a.click();
+        };
+
+      } catch (err) {
+        log(logEl, "ERROR: " + err.message, "error");
+      }
+    });
+
+    document.getElementById("btn-decode").addEventListener("click", () => {
+      const logEl = document.getElementById("dec-log");
+      clearLog(logEl);
+      const resultEl = document.getElementById("dec-result");
+      resultEl.textContent = "(nothing decoded yet)";
+
+      const fileInput = document.getElementById("dec-image");
+      const file = fileInput.files[0];
+      if (!file) {
+        log(logEl, "ERROR: Please upload a stego image.", "error");
+        return;
+      }
+
+      const a = parseInt(document.getElementById("dec-h-a").value, 10);
+      const b = parseInt(document.getElementById("dec-h-b").value, 10);
+      const c = parseInt(document.getElementById("dec-h-c").value, 10);
+      const d = parseInt(document.getElementById("dec-h-d").value, 10);
+      const { invertible, det } = hillKeyInfo(a, b, c, d);
+      if (!invertible) {
+        log(logEl, "ERROR: Hill key matrix is not invertible mod 26 (det=" + mod(det, 26) + ").", "error");
+        return;
+      }
+
+      const keyStr = document.getElementById("dec-sdes-key").value.trim();
+      const key10 = key10FromString(keyStr);
+      if (!key10) {
+        log(logEl, "ERROR: S-DES key must be exactly 10 binary digits (0/1).", "error");
+        return;
+      }
+
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+          log(logEl, "STEP 1 — LSB Extraction (Layer 3 reversed)", "step-title");
+          const dataView = canvas.width + " x " + canvas.height + " px";
+          log(logEl, "Stego image dimensions: " + dataView);
+          const cipherBytes = extractBitsFromImageData(imageData);
+          log(logEl, "32-bit length header decoded  ->  payload length = " + cipherBytes.length + " bytes");
+          log(logEl, "Extracted cipher bytes (Layer 3 output, hex): " + bytesToHex(cipherBytes), "ok");
+
+          log(logEl, "STEP 2 — S-DES Decryption, byte-wise (Layer 2 reversed)", "step-title");
+          const { k1, k2 } = sdesGenerateKeys(key10);
+          log(logEl, "S-DES master key (10-bit): " + keyStr);
+          log(logEl, "  Subkey K1 (8-bit): " + bitsToStr(k1));
+          log(logEl, "  Subkey K2 (8-bit): " + bitsToStr(k2));
+          const decryptedBytes = [];
+          cipherBytes.forEach(byte => {
+            const inBits = byteToBits(byte);
+            const outBits = sdesDecryptByte(inBits, k1, k2);
+            const outByte = bitsToByte(outBits);
+            decryptedBytes.push(outByte);
+            const printable = (outByte >= 32 && outByte <= 126) ? String.fromCharCode(outByte) : "?";
+            log(logEl, "  0x" + byte.toString(16).padStart(2, "0") + " / " + bitsToStr(inBits) + "  ->  0x" + outByte.toString(16).padStart(2, "0") + " / " + bitsToStr(outBits) + "  ('" + printable + "')");
+          });
+          const hillCipherText = decryptedBytes.map(b => String.fromCharCode(b)).join("");
+          log(logEl, "Recovered Hill-ciphertext (Layer 2 output): " + hillCipherText, "ok");
+
+          log(logEl, "STEP 3 — Hill Cipher Decryption (Layer 1 reversed)", "step-title");
+          const inv = hillInverseMatrix(a, b, c, d);
+          log(logEl, "Key matrix K    : [[" + a + "," + b + "],[" + c + "," + d + "]]");
+          log(logEl, "Inverse matrix  : [[" + inv.a + "," + inv.b + "],[" + inv.c + "," + inv.d + "]]  (mod 26)");
+          const plaintext = hillDecrypt(hillCipherText, a, b, c, d);
+          if (plaintext === null) throw new Error("Hill key is not invertible.");
+          log(logEl, "Recovered plaintext (Layer 1 output — final): " + plaintext, "ok");
+
+          resultEl.textContent = plaintext;
+        } catch (err) {
+          log(logEl, "ERROR: " + err.message, "error");
+          resultEl.textContent = "(decoding failed — see log above)";
+        }
+      };
+      img.onerror = () => {
+        log(logEl, "ERROR: Could not load the selected image file.", "error");
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  </script>
+</body>
+
+</html>
